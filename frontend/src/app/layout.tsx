@@ -1,0 +1,1 @@
+import './globals.css';export const metadata={title:'Destination Africa',description:'Africa travel and experiences marketplace'};export default function RootLayout({children}:any){return <html lang="en"><body>{children}</body></html>}

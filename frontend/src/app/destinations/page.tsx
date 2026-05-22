@@ -1,1 +1,22 @@
-import Link from 'next/link';import {Header} from '@/components/Header';export default async function Destinations(){const API=process.env.NEXT_PUBLIC_API_URL||'http://localhost:8000';const countries=await fetch(API+'/countries',{cache:'no-store'}).then(r=>r.json());return <><Header/><main className="section"><h1 className="text-4xl font-black">African Destinations</h1><div className="mt-6 grid gap-4 md:grid-cols-4">{countries.map((c:any)=><Link href={`/destinations/${c.slug}`} className="card overflow-hidden"><img src={c.image_url} className="h-36 w-full object-cover"/><div className="p-4 font-black">{c.name}</div></Link>)}</div></main></>}
+import Link from 'next/link';
+import {Header} from '@/components/Header';
+
+export default async function Destinations(){
+  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  let countries:any[] = [];
+  try { countries = await fetch(API+'/countries',{cache:'no-store'}).then(r=>r.ok?r.json():[]); } catch {}
+  return (
+    <><Header/>
+    <main className="section">
+      <h1 className="text-4xl font-black">African Destinations</h1>
+      <div className="mt-6 grid gap-4 md:grid-cols-4">
+        {countries.map((c:any)=>(
+          <Link key={c.id} href={`/destinations/${c.slug}`} className="card overflow-hidden">
+            <img src={c.image_url} className="h-36 w-full object-cover"/>
+            <div className="p-4 font-black">{c.name}</div>
+          </Link>
+        ))}
+      </div>
+    </main></>
+  );
+}

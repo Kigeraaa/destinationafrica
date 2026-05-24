@@ -1,137 +1,93 @@
 'use client';
-import { useState } from 'react';
+import {useState} from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, X, LogOut } from 'lucide-react';
-import { Logo } from './Logo';
-import { logout } from '@/lib/api';
+import {Logo} from './Logo';
 
-type Role = 'Admin' | 'Operator' | 'Traveler';
-
-interface NavItem {
-  label: string;
-  href: string;
-}
-
-interface DashboardShellProps {
-  role: Role;
-  children: React.ReactNode;
-}
-
-const NAV: Record<Role, NavItem[]> = {
-  Admin: [
-    { label: 'Overview', href: '/dashboard/admin' },
-    { label: 'Users', href: '/dashboard/admin/users' },
-    { label: 'Operators', href: '/dashboard/admin/operators' },
-    { label: 'Bookings', href: '/dashboard/admin/bookings' },
-    { label: 'Payments', href: '/dashboard/admin/payments' },
-    { label: 'Reviews', href: '/dashboard/admin/reviews' },
-    { label: 'CMS', href: '/dashboard/admin/cms' },
-    { label: 'Tickets', href: '/dashboard/admin/tickets' },
+const NAV:Record<string,{label:string,icon:string}[]> = {
+  Admin:[
+    {label:'Overview',icon:'🏠'},{label:'Users',icon:'👥'},{label:'Operators',icon:'🏢'},
+    {label:'Bookings',icon:'📅'},{label:'Payments',icon:'💳'},{label:'Reviews',icon:'⭐'},
+    {label:'CMS',icon:'📝'},{label:'Tickets',icon:'🎫'},
   ],
-  Operator: [
-    { label: 'Overview', href: '/dashboard/operator' },
-    { label: 'Tours', href: '/dashboard/operator/tours' },
-    { label: 'Bookings', href: '/dashboard/operator/bookings' },
-    { label: 'Messages', href: '/dashboard/operator/messages' },
-    { label: 'Earnings', href: '/dashboard/operator/earnings' },
-    { label: 'Reviews', href: '/dashboard/operator/reviews' },
-    { label: 'Subscription', href: '/dashboard/operator/subscription' },
+  Operator:[
+    {label:'Overview',icon:'🏠'},{label:'Tours',icon:'🗺️'},{label:'Bookings',icon:'📅'},
+    {label:'Messages',icon:'💬'},{label:'Earnings',icon:'💰'},{label:'Reviews',icon:'⭐'},
+    {label:'Subscription',icon:'🔑'},
   ],
-  Traveler: [
-    { label: 'Overview', href: '/dashboard/traveler' },
-    { label: 'Bookings', href: '/dashboard/traveler/bookings' },
-    { label: 'Wishlist', href: '/dashboard/traveler/wishlist' },
-    { label: 'Payments', href: '/dashboard/traveler/payments' },
-    { label: 'Messages', href: '/dashboard/traveler/messages' },
-    { label: 'Reviews', href: '/dashboard/traveler/reviews' },
-    { label: 'Settings', href: '/dashboard/traveler/settings' },
+  Traveler:[
+    {label:'Overview',icon:'🏠'},{label:'Bookings',icon:'📅'},{label:'Wishlist',icon:'❤️'},
+    {label:'Payments',icon:'💳'},{label:'Messages',icon:'💬'},{label:'Reviews',icon:'⭐'},
+    {label:'Settings',icon:'⚙️'},
   ],
 };
 
-function SidebarContent({ role, pathname, onClose }: { role: Role; pathname: string; onClose?: () => void }) {
-  return (
-    <div className="flex h-full flex-col">
-      <div onClick={onClose}>
-        <Logo />
+export function DashboardShell({role,activeSection,onNav,user,children}:any){
+  const [mobileOpen,setMobileOpen]=useState(false);
+  const links=NAV[role]||NAV.Traveler;
+
+  function logout(){
+    localStorage.removeItem('da_auth');
+    location.href='/';
+  }
+
+  const Sidebar=()=>(
+    <div className="flex flex-col h-full">
+      <Logo/>
+      {user && (
+        <div className="mt-6 rounded-2xl bg-sand/50 p-3">
+          <p className="text-xs text-slate-500">Logged in as</p>
+          <p className="text-sm font-bold truncate">{user.full_name||user.company_name||user.email}</p>
+          <p className="text-xs text-slate-400 truncate">{user.email}</p>
+        </div>
+      )}
+      <div className="mt-6 space-y-1 flex-1">
+        {links.map((l:any)=>(
+          <button key={l.label}
+            onClick={()=>{onNav&&onNav(l.label);setMobileOpen(false)}}
+            className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-colors flex items-center gap-3
+              ${activeSection===l.label?'bg-forest text-white':'hover:bg-sand'}`}>
+            <span>{l.icon}</span>{l.label}
+          </button>
+        ))}
       </div>
-      <nav className="mt-8 flex-1 space-y-1">
-        {NAV[role].map((item) => {
-          const active = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              className={`block w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
-                active
-                  ? 'bg-forest text-white'
-                  : 'text-slate-700 hover:bg-sand dark:text-slate-200'
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-      <div className="mt-6 space-y-2 border-t pt-4">
-        <Link href="/" className="block text-sm font-bold text-earth hover:underline" onClick={onClose}>
+      <div className="mt-6 border-t pt-4 space-y-1">
+        <Link href="/" className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-earth hover:bg-sand rounded-2xl">
           ← Back to marketplace
         </Link>
-        <button
-          onClick={logout}
-          className="flex w-full items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition"
-        >
-          <LogOut size={16} />
-          Logout
+        <button onClick={logout} className="w-full flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-2xl">
+          → Logout
         </button>
       </div>
     </div>
   );
-}
-
-export function DashboardShell({ role, children }: DashboardShellProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const pathname = usePathname();
 
   return (
     <div className="min-h-screen bg-sand/30">
       {/* Desktop sidebar */}
-      <aside className="fixed hidden h-full w-72 overflow-y-auto border-r bg-white p-6 lg:block dark:bg-slate-950">
-        <SidebarContent role={role} pathname={pathname} />
+      <aside className="fixed hidden h-full w-72 border-r bg-white p-6 lg:flex flex-col overflow-y-auto">
+        <Sidebar/>
       </aside>
 
-      {/* Mobile top bar */}
-      <div className="flex items-center justify-between border-b bg-white px-4 py-3 lg:hidden dark:bg-slate-950">
-        <Logo />
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="rounded-xl p-2 hover:bg-sand"
-          aria-label="Open menu"
-        >
-          <Menu size={22} />
-        </button>
+      {/* Mobile header */}
+      <div className="lg:hidden sticky top-0 z-50 flex items-center justify-between border-b bg-white px-4 py-3">
+        <Logo/>
+        <button onClick={()=>setMobileOpen(true)} className="rounded-xl border p-2 text-sm font-bold">☰ Menu</button>
       </div>
 
-      {/* Mobile drawer overlay */}
+      {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileOpen(false)}
-          />
-          <aside className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-white p-6 shadow-xl dark:bg-slate-950">
-            <div className="mb-4 flex justify-end">
-              <button onClick={() => setMobileOpen(false)} aria-label="Close menu">
-                <X size={22} />
-              </button>
+          <div className="absolute inset-0 bg-black/40" onClick={()=>setMobileOpen(false)}/>
+          <aside className="absolute right-0 top-0 h-full w-72 bg-white p-6 overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <span className="font-bold">{role} Menu</span>
+              <button onClick={()=>setMobileOpen(false)} className="text-xl">✕</button>
             </div>
-            <SidebarContent role={role} pathname={pathname} onClose={() => setMobileOpen(false)} />
+            <Sidebar/>
           </aside>
         </div>
       )}
 
-      {/* Main content */}
       <main className="lg:pl-72">
         <div className="p-6 lg:p-10">{children}</div>
       </main>
